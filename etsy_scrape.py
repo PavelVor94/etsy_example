@@ -9,6 +9,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
+import sys
 
 
 def scrape_etsy_listing(listing_url, driver):
@@ -25,98 +26,52 @@ def scrape_etsy_listing(listing_url, driver):
     shop_sales = 0
     item_reviews = 0
     shop_reviews = 0
-    on_etsy_since = 0
     reviews = list()
 
     driver.get(listing_url)
-
+    time.sleep(3)
     # click accept on Etsy Privacy Settings
     try:
-        accept_btn = driver.find_element_by_xpath("/html/body/div[9]/div[2]/div/div[2]/div[2]/button")
-        accept_btn.click()
+
+        driver.find_element_by_xpath("//button[contains(@class,'wt-btn wt-btn--filled wt-mb-xs-0')]").click()
     except NoSuchElementException:
         # if there is no accept privacy button just continue
         pass
 
     # wait a bit for the window to disappear
-    time.sleep(2)
 
-    title = driver.find_element_by_xpath(
-        "/html/body/div[6]/div[1]/div[1]/div/div/div[1]/div[2]/div/div/div[2]/div/h1").text
-
-    price = driver.find_element_by_xpath(
-        "/html/body/div[6]/div[1]/div[1]/div/div/div[1]/div[2]/div/div/div[3]/div[1]/div/div[1]/p[1]").text
+    title = driver.find_element_by_xpath("//h1[contains(@class, 'wt-text-body-03 wt-line-height-tight wt-break-word wt-mb-xs-1')]").text
+    price = driver.find_element_by_xpath("//p[contains(@class, 'wt-text-title-03 wt-mr-xs-2')]").text
 
     # price is now e.g.: "Price:\nUSD 17.95+"
     # split it at whitespace and just take the number
-    price = price.split(" ")[1]
-
+    price = price.split(" ")[0].replace(',' , '.').replace('Price:' , '').strip().replace("$" , '').replace('+' , '')
     # check if "+" sign is in number and remove it
-    if "+" in price:
-        price = price.replace("+", "")
-
     # convert price to float
     price = float(price)
 
-    shop_sales = driver.find_element_by_xpath(
-        "/html/body/div[6]/div[1]/div[1]/div/div/div[1]/div[2]/div/div/div[1]/div/div/a/span[1]").text
-
+    shop_sales = driver.find_element_by_xpath("//span[@class='wt-text-caption']").text
     # shop_sales is now e.g.: "113,109 sales"
     # split on whitespace and just take the number
     # and remove ","
-    shop_sales = shop_sales.split(" ")[0].replace(",", "")
+    shop_sales = shop_sales.replace(' sales' , '').replace(" ", "").replace(',' , '')
+
     # convert to int
     shop_sales = int(shop_sales)
 
-    # select newest comments
-    try:
-        select_field = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.XPATH,
-                                            "/html/body/div[6]/div[1]/div[1]/div/div/div[1]/div[4]/div/div/div[1]/div/div[2]/div[2]/div[1]/div[2]/div/button/span[1]"))
-        )
-        # select_field = driver.find_element_by_xpath("/html/body/div[6]/div[1]/div[1]/div/div/div[1]/div[4]/div/div/div[1]/div/div[2]/div[2]/div[1]/div[2]/div/button/span[1]")
-    except:
-        driver.refresh();
 
-        select_field = driver.find_element_by_xpath(
-            "/html/body/div[6]/div[1]/div[1]/div/div/div[1]/div[4]/div/div/div[1]/div/div[2]/div[2]/div[1]/div[2]/div/button/span[1]")
-
-    select_field.click()
-
-    time.sleep(2)
-    newest_btn = driver.find_element_by_xpath(
-        "/html/body/div[6]/div[1]/div[1]/div/div/div[1]/div[4]/div/div/div[1]/div/div[2]/div[2]/div[1]/div[2]/div/div/button[2]")
-    newest_btn.click()
-
-    # wait a bit for the newest comments to appear
-    time.sleep(1.5)
-
-    item_reviews = driver.find_element_by_xpath(
-        "/html/body/div[6]/div[1]/div[1]/div/div/div[1]/div[4]/div/div/div[1]/div/div[2]/div[2]/div[1]/div[1]/button[1]/span").text
+    item_reviews = driver.find_element_by_xpath("//span[contains(@class,'wt-badge wt-badge--status-02 wt-ml-xs-2')]").text
     # convert to int
-    item_reviews = int(item_reviews)
+    item_reviews = int(item_reviews.replace(' ' , '').replace(',' , ''))
 
-    shop_reviews = driver.find_element_by_xpath(
-        "/html/body/div[6]/div[1]/div[1]/div/div/div[1]/div[4]/div/div/div[1]/div/div[1]/div/div/h3").text
+    shop_reviews = driver.find_element_by_xpath("//span[contains(@class,'wt-badge wt-badge--status-02 wt-ml-xs-2 wt-nowrap')]").text
 
     # shop_reviews is now e.g.: "18,259 reviews\n5 out of 5 stars"
     # we just want to number and remove the comma
-    shop_reviews = shop_reviews.split(" ")[0].replace(",", "")
     # convert to int
-    shop_reviews = int(shop_reviews)
+    shop_reviews = int(shop_reviews.replace(' ' , '').replace(',' , ''))
 
-    try:
-        on_etsy_since = driver.find_element_by_xpath(
-            "/html/body/div[6]/div[1]/div[1]/div/div/div[1]/div[3]/div/div[4]/div[2]/div[2]/p[2]").text
-    except NoSuchElementException:
-        on_etsy_since = driver.find_element_by_xpath(
-            "/html/body/div[6]/div[1]/div[1]/div/div/div[1]/div[3]/div/div[3]/div[2]/div[2]/p[2]").text
 
-    # convert to int
-    on_etsy_since = int(on_etsy_since)
-
-    # in case there are no reviews anymore within 10 potential pages, break
-    should_we_break = False
 
     # get review dates for first 10 pages
     for i in range(10):
@@ -125,81 +80,22 @@ def scrape_etsy_listing(listing_url, driver):
 
         # regexp to find date in string
         regexp = r"(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)\s+\d{1,2},\s+\d{4}"
+        time.sleep(1)
+        rewiews = driver.find_elements_by_xpath('//div[@class="wt-display-flex-xs wt-align-items-center wt-mb-xs-1"]')
+        for r in rewiews:
 
-        # 4 reviews per page
-        for j in range(1, 5):
-            review_xpath = "/html/body/div[6]/div[1]/div[1]/div/div/div[1]/div[4]/div/div/div[1]/div/div[2]/div[2]/div[2]/div/div[" + str(
-                j) + "]/div[1]/p"
-            try:
-                review_date = driver.find_element_by_xpath(review_xpath).text
-            except NoSuchElementException:
-                # the review element is not present, that means there are no reviews on this page anymore
-                # break out
-                should_we_break = True
-                break  # break from inner loop
-
-            match = re.search(regexp, review_date)
+            match = re.search(regexp, r.find_element_by_xpath('p[@class="wt-text-caption wt-text-gray"]').text)
             date = datetime.strptime(match.group(), "%b %d, %Y").date()
-
-            # check if review_date is later than 30 days
-            if ((datetime.date(datetime.now()) - date).days) > 30:
-                should_we_break = True
-                break
-
             reviews.append({"date": date})
-            time.sleep(1)
-
-        if should_we_break:  # no more reviews
-            break
-
-        # check if next button even exists (only 1 review page)
         try:
-            driver.find_element_by_xpath(
-                "/html/body/div[6]/div[1]/div[1]/div/div/div[1]/div[4]/div/div/div[1]/div/div[2]/nav/ul/li[6]/a/span[2]")
-        except NoSuchElementException:
-            try:
-                driver.find_element_by_xpath(
-                    "/html/body/div[6]/div[1]/div[1]/div/div/div[1]/div[4]/div/div/div[1]/div/div[2]/nav/ul/li[5]/a/span[2]")
-            except NoSuchElementException:
-                try:
-                    driver.find_element_by_xpath(
-                        "/html/body/div[6]/div[1]/div[1]/div/div/div[1]/div[4]/div/div/div[1]/div/div[2]/nav/ul/li[4]/a/span[2]")
-                except NoSuchElementException:
-                    # there is only one review page, break
-                    print("There is only 1 review page!")
-                    break
+            next_btn = driver.find_elements_by_xpath('//a[contains(@class,"wt-action-group__item wt-btn wt-btn--small wt-btn--icon ")]')[1]
+        except:
+            next_btn = 0
+        if next_btn:
+            next_btn.click()
+            time.sleep(1)
+        else: break
 
-        # click next page
-        # after the second page the xpath changes and it stays like that until second last page
-        if i > 1:  # index starts from 0
-            try:
-                driver.find_element_by_xpath(
-                    "/html/body/div[6]/div[1]/div[1]/div/div/div[1]/div[4]/div/div/div[1]/div/div[2]/nav/ul/li[7]/a/span[2]").click()
-            except NoSuchElementException:
-                # layout is different, handle it
-                try:
-                    driver.find_element_by_xpath(
-                        "/html/body/div[6]/div[1]/div[1]/div/div/div[1]/div[4]/div/div/div[1]/div/div[2]/nav/ul/li[6]/a/span[2]").click()
-                except NoSuchElementException:
-                    # there are only 2 pages of reviews, break out
-                    print("There is no comment page 3!")
-                    break
-        else:
-            try:
-                driver.find_element_by_xpath(
-                    "/html/body/div[6]/div[1]/div[1]/div/div/div[1]/div[4]/div/div/div[1]/div/div[2]/nav/ul/li[6]/a/span[2]").click()
-            except NoSuchElementException:
-                # layout is different, handle it
-                try:
-                    driver.find_element_by_xpath(
-                        "/html/body/div[6]/div[1]/div[1]/div/div/div[1]/div[4]/div/div/div[1]/div/div[2]/nav/ul/li[5]/a/span[2]").click()
-                except NoSuchElementException:
-                    # there are only 2 pages of reviews, handle it
-                    driver.find_element_by_xpath(
-                        "/html/body/div[6]/div[1]/div[1]/div/div/div[1]/div[4]/div/div/div[1]/div/div[2]/nav/ul/li[4]/a/span[2]").click()
-
-        # wait a bit for the new page 
-        time.sleep(0.8)
 
     # fill in results
     results["title"] = title
@@ -207,7 +103,6 @@ def scrape_etsy_listing(listing_url, driver):
     results["shop_sales"] = shop_sales
     results["item_reviews"] = item_reviews
     results["shop_reviews"] = shop_reviews
-    results["on_etsy_since"] = on_etsy_since
     results["reviews"] = reviews
 
     # driver.close()
@@ -272,26 +167,35 @@ def main():
     options = webdriver.ChromeOptions()
     options.add_argument("--headless")
 
+
     driver = webdriver.Chrome(ChromeDriverManager().install(), options=options)
     # driver = webdriver.Chrome('/home/filkatron/Downloads/chromedriver', options=options)
 
     counter = 1
-
+    total_start = time.time()
     while True:
         print("Running for %d. time" % counter)
         counter += 1
 
         for listing_url in links:
             print("Checking URL: %s" % listing_url)
-            start = time.time()
 
-            results = scrape_etsy_listing(listing_url, driver)
+            try:
+                start = time.time()
 
-            end = time.time()
+                results = scrape_etsy_listing(listing_url, driver)
 
-            print(results)
+                print(results)
 
-            print("execution time: %f\n" % round(end - start))
+                end = time.time()
+                print("execution time: %f\n" % round(end - start))
+            except:
+                print('failed connect %s' % listing_url)
+                print(sys.exc_info())
+
+
+    total_end = time.time()
+    print("total time: %f\n" % round(total.end - total.start))
 
     driver.close()
 
