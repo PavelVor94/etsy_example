@@ -1,0 +1,14 @@
+__pycache__/
+.DS_Store
+staticfiles
+venv
+node_modules
+.prettierignore
+.prettierrc
+.editorconfig
+db.sqlite3
+media/
+.idea/
+!static/metronic_assets/media/
+scraper/chromedriver
+chromedriver
