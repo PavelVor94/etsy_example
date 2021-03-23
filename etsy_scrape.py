@@ -29,7 +29,7 @@ def scrape_etsy_listing(listing_url, driver):
     reviews = list()
 
     driver.get(listing_url)
-    time.sleep(5)
+    time.sleep(3)
     # click accept on Etsy Privacy Settings
     try:
 
@@ -165,7 +165,7 @@ def main():
     # binary = FirefoxBinary('/usr/lib64/firefox/firefox')
 
     options = webdriver.ChromeOptions()
-    #options.add_argument("--headless")
+    options.add_argument("--headless")
 
 
     driver = webdriver.Chrome(ChromeDriverManager().install(), options=options)
