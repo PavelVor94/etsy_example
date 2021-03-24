@@ -29,7 +29,7 @@ def scrape_etsy_listing(listing_url, driver):
     reviews = list()
 
     driver.get(listing_url)
-    time.sleep(3)
+    time.sleep(10)
     # click accept on Etsy Privacy Settings
     try:
 
@@ -45,7 +45,7 @@ def scrape_etsy_listing(listing_url, driver):
 
     # price is now e.g.: "Price:\nUSD 17.95+"
     # split it at whitespace and just take the number
-    price = price.split(" ")[0].replace(',' , '.').replace('Price:' , '').strip().replace("$" , '').replace('+' , '')
+    price = price.split(" ")[1].replace(',' , '.').replace('Price:' , '').replace("$" , '').replace('+' , '').strip()
     # check if "+" sign is in number and remove it
     # convert price to float
     price = float(price)
@@ -80,7 +80,7 @@ def scrape_etsy_listing(listing_url, driver):
 
         # regexp to find date in string
         regexp = r"(Jan(uary)?|Feb(ruary)?|Mar(ch)?|Apr(il)?|May|Jun(e)?|Jul(y)?|Aug(ust)?|Sep(tember)?|Oct(ober)?|Nov(ember)?|Dec(ember)?)\s+\d{1,2},\s+\d{4}"
-        time.sleep(1)
+        time.sleep(2)
         rewiews = driver.find_elements_by_xpath('//div[@class="wt-display-flex-xs wt-align-items-center wt-mb-xs-1"]')
         for r in rewiews:
 
@@ -93,7 +93,7 @@ def scrape_etsy_listing(listing_url, driver):
             next_btn = 0
         if next_btn:
             next_btn.click()
-            time.sleep(1)
+            time.sleep(2)
         else: break
 
 
@@ -190,8 +190,9 @@ def main():
                 end = time.time()
                 print("execution time: %f\n" % round(end - start))
             except:
-                print('failed connect %s' % listing_url)
+                print("failed connect: %s" % listing_url)
                 print(sys.exc_info())
+
 
 
     total_end = time.time()
