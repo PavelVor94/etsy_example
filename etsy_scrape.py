@@ -32,9 +32,8 @@ def scrape_etsy_listing(listing_url, driver):
     time.sleep(10)
     # click accept on Etsy Privacy Settings
     try:
-
         driver.find_element_by_xpath("//button[contains(@class,'wt-btn wt-btn--filled wt-mb-xs-0')]").click()
-    except NoSuchElementException:
+    except :
         # if there is no accept privacy button just continue
         pass
 
@@ -71,6 +70,10 @@ def scrape_etsy_listing(listing_url, driver):
     # convert to int
     shop_reviews = int(shop_reviews.replace(' ' , '').replace(',' , ''))
 
+    driver.find_element_by_xpath("//button[contains(@class,'wt-menu__trigger wt-btn wt-btn--transparent wt-btn--small sort-reviews-trigger')]").click()
+    time.sleep(0.5)
+    driver.find_element_by_xpath("//button[contains(@class,'wt-menu__item reviews-sort-by-item')]").click()
+    time.sleep(2)
 
 
     # get review dates for first 10 pages
